@@ -1,4 +1,5 @@
 // ml:run = time -p $bin > output
+// ml:ccf += -fno-vectorize
 // ml:ldf += -lOpenCL
 #include <iostream>
 #include <iterator>
