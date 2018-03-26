@@ -46,10 +46,10 @@ int main()
         p.getDevices(CL_DEVICE_TYPE_DEFAULT, &devices);
 
         for (auto const& d : devices) {
-            std::cout << std::left << std::setw(width) << "Device Name"         << d.getInfo<CL_DEVICE_NAME>()                << "\n";
-            std::cout << std::left << std::setw(width) << "Device Version"      << d.getInfo<CL_DEVICE_VERSION>()             << "\n";
-            std::cout << std::left << std::setw(width) << "Max compute units"   << d.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>()   << "\n";
-            std::cout << std::left << std::setw(width) << "Max clock frequency" << d.getInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>() << "MHz\n";
+            std::cout << std::left << std::setw(width) << "Device Name"         << d.getInfo<CL_DEVICE_NAME>()                       << "\n";
+            std::cout << std::left << std::setw(width) << "Device Version"      << d.getInfo<CL_DEVICE_VERSION>()                    << "\n";
+            std::cout << std::left << std::setw(width) << "Max compute units"   << d.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>()          << "\n";
+            std::cout << std::left << std::setw(width) << "Max clock frequency" << d.getInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>()        << "MHz\n";
             std::cout << std::left << std::setw(width) << "Global memory size"  << memory_GB(d.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>()) << "\n";
         }
     }
