@@ -1,0 +1,139 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="author" content="yottacto"><title>OpenCL</title><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui" name="viewport"><link href="node_modules/reveal.js/css/reveal.css" rel="stylesheet"><link rel="stylesheet" href="node_modules/reveal.js/css/theme/simple.css" id="theme"><link href="node_modules/reveal.js/lib/css/zenburn.css" rel="stylesheet"><script>var link = document.createElement( 'link' );
+link.rel = 'stylesheet';
+link.type = 'text/css';
+link.href = window.location.search.match( /print-pdf/gi ) ? "node_modules/reveal.js/css/print/pdf.css" : "node_modules/reveal.js/css/print/paper.css";
+document.getElementsByTagName( 'head' )[0].appendChild( link );</script><!--[if lt IE 9]><script src="node_modules/reveal.js/lib/js/html5shiv.js"></script><![endif]--></head><body><div class="reveal"><div class="slides"><section class="title" data-state="title"><h1>OpenCL</h1><p class="author"><small>yottacto</small></p></section><section id="opencl"><h2>OpenCL</h2><div class="ulist"><ul><li class="fragment"><p>maintained by Khronos Group</p></li><li class="fragment"><p>Open Computing Language</p></li><li class="fragment"><p>Open C-like language</p></li><li class="fragment"><p>Currently OpenCL 2.2</p></li><li class="fragment"><p>Brings the OpenCL C++ kernel language</p></li></ul></div></section>
+<section id="language_bindings"><h2>Language bindings</h2><div class="ulist"><ul><li class="fragment"><p>Rust</p></li><li class="fragment"><p>Haskell</p></li><li class="fragment"><p>&#8230;&#8203;</p></li></ul></div></section>
+<section id="coding_in_c" data-transition="zoom"><h2>coding in C++</h2><div class="ulist"><ul><li class="fragment"><p>Hard time with C</p></li><li class="fragment"><p>Khronos C++ bindings</p><div class="listingblock"><div class="content"><pre class="highlight"><code data-noescape class="c++ language-c++">#include &lt;CL/cl2.hpp&gt;</code></pre></div></div></li></ul></div></section>
+<section><section id="example_homework_1" data-transition-speed="fast"><h2>Example: homework 1</h2><div class="ulist"><ul><li class="fragment"><p>One line is enough</p></li><li class="fragment"><p>here:</p><div class="listingblock"><div class="content"><pre class="highlight"><code data-noescape class="c language-c">main() { system("clinfo"); }</code></pre></div></div></li></ul></div></section><section id="using_khronos_c"><h2>using Khronos C++</h2><div class="paragraph"><p>let&#8217;s take a look</p></div></section></section>
+<section><section id="homework_2"><h2>Homework 2</h2><div class="paragraph"><p>vectorized add</p></div></section><section id="framework"><h2>Framework</h2><div class="imageblock" style=""><img src="figures/f1.png" alt="f1"></div></section><section id="general_steps"><h2>General steps</h2><div class="ulist"><ul><li class="fragment"><p>Query host (platform and devices)</p><div class="ulist"><ul><li class="fragment"><p>platforms:</p><div class="listingblock"><div class="content"><pre class="highlight"><code data-noescape class="c++ language-c++">std::vector&lt;cl::Platform&gt; all_platforms;
+cl::Platform::get(&amp;all_platforms);
+cl::Platform default_platform{all_platforms[0]};</code></pre></div></div></li><li class="fragment"><p>devices:</p><div class="listingblock"><div class="content"><pre class="highlight"><code data-noescape class="c++ language-c++">std::vector&lt;cl::Device&gt; devices;
+default_platform.getDevices(CL_DEVICE_TYPE_ALL, &amp;devices);
+cl::Device default_device{all_devices[0]};</code></pre></div></div></li></ul></div></li></ul></div></section><section id="general_steps_2" data-transition="fade"><h2>General steps</h2><div class="ulist"><ul><li><p>Query host (platform and devices)</p><div class="ulist"><ul><li><p>device type</p><div class="listingblock"><div class="content"><pre class="highlight"><code data-noescape>CL_DEVICE_TYPE_DEFAULT
+CL_DEVICE_TYPE_CPU
+CL_DEVICE_TYPE_GPU
+CL_DEVICE_TYPE_ACCELERATOR
+CL_DEVICE_TYPE_ALL</code></pre></div></div></li></ul></div></li></ul></div></section><section id="general_steps_3" data-transition="fade"><h2>General steps</h2><div class="ulist"><ul><li class="fragment"><p>Create context</p><div class="listingblock"><div class="content"><pre class="highlight"><code data-noescape class="c++ language-c++">cl::Context context{default_device};</code></pre></div></div></li><li class="fragment"><p>Create programs</p><div class="listingblock"><div class="content"><pre class="highlight"><code data-noescape class="c++ language-c++">std::string kernel_code{R"(...)"};
+cl::Program program{context, sources};</code></pre></div></div></li></ul></div></section><section id="general_steps_4" data-transition="fade"><h2>General steps</h2><div class="ulist"><ul><li class="fragment"><p>Select kernels</p><div class="listingblock"><div class="content"><pre class="highlight"><code data-noescape class="c++ language-c++">auto add = cl::make_kernel&lt;
+    cl::Buffer&amp;,
+    cl::Buffer&amp;,
+    cl::Buffer&amp;
+&gt;(program, "add");</code></pre></div></div></li><li class="fragment"><p>Create memory object &amp; Copy</p><div class="listingblock"><div class="content"><pre class="highlight"><code data-noescape class="c++ language-c++">cl::Buffer buffer{
+    context, CL_MEM_READ_WRITE, bsize
+};
+queue.enqueueWriteBuffer(
+    buffer,
+    CL_TRUE,
+    0, bsize, a.data()
+);</code></pre></div></div></li></ul></div></section><section id="general_steps_5" data-transition="fade"><h2>General steps</h2><div class="ulist"><ul><li class="fragment"><p>Provide kernels to command queue &amp; Run</p><div class="listingblock"><div class="content"><pre class="highlight"><code data-noescape class="c++ language-c++">cl::CommandQueue queue{context, default_device};
+cl::EnqueueArgs eargs{queue, cl::NDRange(size)};
+
+add(eargs, buffer_a, buffer_b, buffer_c).wait();</code></pre></div></div></li></ul></div></section></section>
+<section id="performance"><h2>Performance</h2><div class="imageblock" style=""><img src="figures/f2.png" alt="Nvidia OpenCL vs simple cpu add"></div></section>
+<section id="bonus"><h2>Bonus</h2><div class="ulist"><ul><li class="fragment"><p>Boost.Compute</p></li><li class="fragment"><p>example:</p><div class="listingblock"><div class="content"><pre class="highlight"><code data-noescape class="c++ language-c++">using compute = boost::compute;
+compute::vector&lt;float&gt; va(a, a + 4);
+compute::vector&lt;float&gt; vb(b, b + 4);
+compute::vector&lt;float&gt; vc(4);
+
+compute::transform(
+    va.begin(),
+    va.end(),
+    vb.begin(),
+    vc.begin(),
+    compute::plus&lt;float&gt;()
+);
+
+compute::copy(vc.begin(), vc.end(), c);</code></pre></div></div></li></ul></div></section>
+<section id="what_s_more"><h2>What&#8217;s more?</h2><div class="ulist"><ul><li class="fragment"><p>OpenCL SYCL</p></li></ul></div></section></div></div><script src="node_modules/reveal.js/lib/js/head.min.js"></script><script src="node_modules/reveal.js/js/reveal.js"></script><script>// See https://github.com/hakimel/reveal.js#configuration for a full list of configuration options
+Reveal.initialize({
+  // Display controls in the bottom right corner
+  controls: true,
+  // Display a presentation progress bar
+  progress: true,
+  // Set a per-slide timing for speaker notes, null means none
+  defaultTiming: null,
+  // Display the page number of the current slide
+  slideNumber: false,
+  // Push each slide change to the browser history
+  history: false,
+  // Enable keyboard shortcuts for navigation
+  keyboard: true,
+  // Enable the slide overview mode
+  overview: true,
+  // Vertical centering of slides
+  center: true,
+  // Enables touch navigation on devices with touch input
+  touch: true,
+  // Loop the presentation
+  loop: false,
+  // Change the presentation direction to be RTL
+  rtl: false,
+  // Randomizes the order of slides each time the presentation loads
+  shuffle: false,
+  // Turns fragments on and off globally
+  fragments: true,
+  // Flags if the presentation is running in an embedded mode,
+  // i.e. contained within a limited portion of the screen
+  embedded: false,
+  // Flags if we should show a help overlay when the questionmark
+  // key is pressed
+  help: true,
+  // Flags if speaker notes should be visible to all viewers
+  showNotes: false,
+  // Global override for autolaying embedded media (video/audio/iframe)
+  // - null: Media will only autoplay if data-autoplay is present
+  // - true: All media will autoplay, regardless of individual setting
+  // - false: No media will autoplay, regardless of individual setting
+  autoPlayMedia: null,
+  // Number of milliseconds between automatically proceeding to the
+  // next slide, disabled when set to 0, this value can be overwritten
+  // by using a data-autoslide attribute on your slides
+  autoSlide: 0,
+  // Stop auto-sliding after user input
+  autoSlideStoppable: true,
+  // Enable slide navigation via mouse wheel
+  mouseWheel: false,
+  // Hides the address bar on mobile devices
+  hideAddressBar: true,
+  // Opens links in an iframe preview overlay
+  previewLinks: false,
+  // Theme (e.g., beige, black, league, night, serif, simple, sky, solarized, white)
+  // NOTE setting the theme in the config no longer works in reveal.js 3.x
+  //theme: Reveal.getQueryHash().theme || 'simple',
+  // Transition style (e.g., none, fade, slide, convex, concave, zoom)
+  transition: Reveal.getQueryHash().transition || 'slide',
+  // Transition speed (e.g., default, fast, slow)
+  transitionSpeed: 'default',
+  // Transition style for full page slide backgrounds (e.g., none, fade, slide, convex, concave, zoom)
+  backgroundTransition: 'fade',
+  // Number of slides away from the current that are visible
+  viewDistance: 3,
+  // Parallax background image (e.g., "'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg'")
+  parallaxBackgroundImage: '',
+  // Parallax background size in CSS syntax (e.g., "2100px 900px")
+  parallaxBackgroundSize: '',
+
+  // The "normal" size of the presentation, aspect ratio will be preserved
+  // when the presentation is scaled to fit different resolutions. Can be
+  // specified using percentage units.
+  width: 960,
+  height: 700,
+
+  // Factor of the display size that should remain empty around the content
+  margin: 0.1,
+
+  // Bounds for smallest/largest possible scale to apply to content
+  minScale: 0.2,
+  maxScale: 1.5,
+
+  // Optional libraries used to extend on reveal.js
+  dependencies: [
+      { src: 'node_modules/reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+      { src: 'node_modules/reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+      { src: 'node_modules/reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+      { src: 'node_modules/reveal.js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+      { src: 'node_modules/reveal.js/plugin/zoom-js/zoom.js', async: true },
+      { src: 'node_modules/reveal.js/plugin/notes/notes.js', async: true }
+  ]
+});</script></body></html>

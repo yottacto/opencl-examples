@@ -1,0 +1,196 @@
+= OpenCL
+:author: yottacto
+:source-highlighter: highlightjs
+// :revealjs_theme: beige
+// :revealjs_theme: night
+:revealjs_theme: simple
+
+== OpenCL
+
+[%step]
+* maintained by Khronos Group
+* Open Computing Language
+* Open C-like language
+* Currently OpenCL 2.2
+* Brings the OpenCL C++ kernel language
+
+== Language bindings
+
+[%step]
+* Rust
+* Haskell
+* ...
+
+[transition=zoom, %notitle]
+== coding in C++
+
+[%step]
+* Hard time with C
+* Khronos C++ bindings
++
+[source, c++]
+----
+#include <CL/cl2.hpp>
+----
+
+[transition-speed=fast, %notitle]
+== Example: homework 1
+
+[%step]
+* One line is enough
+* here:
++
+[source, c]
+----
+main() { system("clinfo"); }
+----
+
+
+=== using Khronos C++
+
+let's take a look
+
+== Homework 2
+
+vectorized add
+
+=== Framework
+
+image::figures/f1.png[]
+
+// [background-transition=none]
+=== General steps
+
+[%step]
+* Query host (platform and devices)
+[%step]
+** platforms:
++
+[source, c++]
+----
+std::vector<cl::Platform> all_platforms;
+cl::Platform::get(&all_platforms);
+cl::Platform default_platform{all_platforms[0]};
+----
++
+** devices:
++
+[source, c++]
+----
+std::vector<cl::Device> devices;
+default_platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+cl::Device default_device{all_devices[0]};
+----
+
+[transition=fade]
+=== General steps
+
+* Query host (platform and devices)
+** device type
++
+----
+CL_DEVICE_TYPE_DEFAULT
+CL_DEVICE_TYPE_CPU
+CL_DEVICE_TYPE_GPU
+CL_DEVICE_TYPE_ACCELERATOR
+CL_DEVICE_TYPE_ALL
+----
+
+[transition=fade]
+=== General steps
+
+[%step]
+* Create context
++
+[source, c++]
+----
+cl::Context context{default_device};
+----
++
+* Create programs
++
+[source, c++]
+----
+std::string kernel_code{R"(...)"};
+cl::Program program{context, sources};
+----
+
+
+[transition=fade]
+=== General steps
+
+[%step]
+* Select kernels
++
+[source, c++]
+----
+auto add = cl::make_kernel<
+    cl::Buffer&,
+    cl::Buffer&,
+    cl::Buffer&
+>(program, "add");
+----
++
+* Create memory object & Copy
++
+[source, c++]
+----
+cl::Buffer buffer{
+    context, CL_MEM_READ_WRITE, bsize
+};
+queue.enqueueWriteBuffer(
+    buffer,
+    CL_TRUE,
+    0, bsize, a.data()
+);
+----
+
+
+[transition=fade]
+=== General steps
+
+[%step]
+* Provide kernels to command queue & Run
++
+[source, c++]
+----
+cl::CommandQueue queue{context, default_device};
+cl::EnqueueArgs eargs{queue, cl::NDRange(size)};
+
+add(eargs, buffer_a, buffer_b, buffer_c).wait();
+----
+
+== Performance
+
+image::figures/f2.png[Nvidia OpenCL vs simple cpu add]
+
+== Bonus
+
+[%step]
+* Boost.Compute
+* example:
++
+[source, c++]
+----
+using compute = boost::compute;
+compute::vector<float> va(a, a + 4);
+compute::vector<float> vb(b, b + 4);
+compute::vector<float> vc(4);
+
+compute::transform(
+    va.begin(),
+    va.end(),
+    vb.begin(),
+    vc.begin(),
+    compute::plus<float>()
+);
+
+compute::copy(vc.begin(), vc.end(), c);
+----
+
+
+== What's more?
+
+[%step]
+* OpenCL SYCL
+
