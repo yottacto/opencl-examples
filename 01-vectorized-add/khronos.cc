@@ -5,6 +5,11 @@
 #include <iterator>
 #include <numeric>
 #include <CL/cl.hpp>
+#include "timer.hh"
+
+using value_type = double;
+auto constexpr size = 100'000'000u;
+auto constexpr bsize = size * sizeof(value_type);
 
 int main()
 {
@@ -36,9 +41,10 @@ int main()
     cl::Program::Sources sources;
 
     std::string kernel_code{R"(
-        void kernel add(global int const* A, global int const* B, global int* C)
+        void kernel add(global double const* a, global double const* b, global double* c)
         {
-            C[get_global_id(0)] = A[get_global_id(0)] + B[get_global_id(0)];
+            auto id = get_global_id(0);
+            c[id] = a[id] + b[id];
         }
     )"};
 
@@ -50,10 +56,6 @@ int main()
             << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device) << "\n";
         return 1;
     }
-
-    using value_type = double;
-    auto constexpr size = 10'000'000u;
-    auto constexpr bsize = size * sizeof(int);
 
     cl::Buffer buffer_a{context, CL_MEM_READ_WRITE, bsize};
     cl::Buffer buffer_b{context, CL_MEM_READ_WRITE, bsize};
@@ -70,17 +72,25 @@ int main()
     queue.enqueueWriteBuffer(buffer_a, CL_TRUE, 0, bsize, a.data());
     queue.enqueueWriteBuffer(buffer_b, CL_TRUE, 0, bsize, b.data());
 
-    auto add = cl::make_kernel<cl::Buffer&, cl::Buffer&, cl::Buffer&>(program,"add");
+    auto add = cl::make_kernel<cl::Buffer&, cl::Buffer&, cl::Buffer&>(program, "add");
     cl::EnqueueArgs eargs{queue, cl::NullRange, cl::NDRange(size), cl::NullRange};
-    add(eargs, buffer_a,buffer_b,buffer_c).wait();
+
+    utils::timer t;
+    t.start();
+
+    add(eargs, buffer_a, buffer_b, buffer_c).wait();
+
+    t.stop();
+
+    std::cerr << "time: " << t.elapsed_seconds() << "\n";
 
     std::vector<value_type> c(size);
 
     queue.enqueueReadBuffer(buffer_c, CL_TRUE, 0, bsize, c.data());
 
-    std::cout << "  result: \n";
-    for (auto i : c)
-        std::cout << i << " ";
-    std::cout << "\n";
+    // std::cout << "  result: \n";
+    // for (auto i : c)
+    //     std::cout << i << " ";
+    // std::cout << "\n";
 }
 

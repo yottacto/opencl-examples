@@ -3,9 +3,10 @@
 #include <iostream>
 #include <numeric>
 #include <vector>
+#include "timer.hh"
 
 using value_type = double;
-auto constexpr size = 10'000'000u;
+auto constexpr size = 100'000'000u;
 
 int main()
 {
@@ -15,12 +16,17 @@ int main()
     std::iota(std::begin(a), std::end(a), 0);
     std::iota(std::begin(b), std::end(b), 0);
 
+    utils::timer t;
+    t.start();
 
     for (auto i = 0u; i < size; i++)
         c[i] = a[i] + b[i];
 
-    for (auto i = 0u; i < size; i++)
-        std::cout << c[i] << " ";
-    std::cout << "\n";
+    t.stop();
+    std::cerr << "time: " << t.elapsed_seconds() << "\n";
+
+    // for (auto i = 0u; i < size; i++)
+    //     std::cout << c[i] << " ";
+    // std::cout << "\n";
 }
 
