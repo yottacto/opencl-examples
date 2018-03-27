@@ -1,2 +1,22 @@
 == OpenCL examples
 
+=== Display platforms and devices information
+
+simplified version of `clinfo`, colorized by `ccze`.
+
+=== Vectorized add operation
+
+* Naive sequential program (running on Intel CPU)
+* OpenCL with Khronos C++ bindings (running on Nvidia GPU)
+* OpenCL with Boost.Compute
+
+for details please reference to
+https://github.com/yottacto/opencl-examples/blob/master/presentation/presentation.asciidoc[presentation].
+
+[NOTE]
+====
+The
+https://github.com/yottacto/opencl-examples/blob/master/presentation/presentation.asciidoc#performance[performance]
+(time in seconds) only measured the computation time.
+====
+
