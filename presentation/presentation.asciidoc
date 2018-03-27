@@ -192,5 +192,5 @@ compute::copy(vc.begin(), vc.end(), c);
 == What's more?
 
 [%step]
-* OpenCL SYCL
+* http://ronan.keryell.fr/Talks/2014/2014-11-18-SC14-OpenCL_BoF_SYCL/2014-11-18-OpenCL_BoF_SYCL-expose.pdf[OpenCL SYCL]
 
