@@ -2,18 +2,27 @@
 // ml:ccf += -fno-vectorize
 // ml:ldf += -lOpenCL
 #include <iostream>
+#include <fstream>
 #include <iterator>
 #include <numeric>
 #include <CL/cl.hpp>
 #include "timer.hh"
 
 using value_type = double;
-auto constexpr size = 100'000'000u;
-auto constexpr bsize = size * sizeof(value_type);
+// auto constexpr size = 100'000'000u;
+// auto constexpr bsize = size * sizeof(value_type);
+auto size = 0u;
+auto bsize = 0u;
 
 int main()
 {
-    std::cout << "\n";
+    // std::cout << "\n";
+
+    {
+        std::fstream fin{"config"};
+        fin >> size;
+        bsize = size * sizeof(value_type);
+    }
 
     std::vector<cl::Platform> all_platforms;
     cl::Platform::get(&all_platforms);
@@ -23,8 +32,8 @@ int main()
     }
 
     cl::Platform default_platform{all_platforms[0]};
-    std::cout << "Using platform: "
-        << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
+    // std::cout << "Using platform: "
+    //     << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
 
     std::vector<cl::Device> all_devices;
     default_platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
@@ -34,8 +43,8 @@ int main()
     }
 
     cl::Device default_device{all_devices[0]};
-    std::cout << "Using device: "
-        << default_device.getInfo<CL_DEVICE_NAME>() << "\n\n";
+    // std::cout << "Using device: "
+    //     << default_device.getInfo<CL_DEVICE_NAME>() << "\n\n";
 
     cl::Context context{default_device};
     cl::Program::Sources sources;
@@ -82,7 +91,8 @@ int main()
 
     t.stop();
 
-    std::cerr << "time: " << t.elapsed_seconds() << "\n";
+    // std::cerr << "time: " << t.elapsed_seconds() << "\n";
+    std::cout << t.elapsed_seconds() << "\n";
 
     std::vector<value_type> c(size);
 

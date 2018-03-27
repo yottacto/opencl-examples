@@ -1,0 +1,9 @@
+#!/usr/bin/fish
+
+for i in (seq 5000000 5000000 100000000)
+    echo $i > config
+    set t1 (./khronos)
+    set t2 (./simple)
+    echo -e $i'\t'$t1'\t'$t2
+end
+
