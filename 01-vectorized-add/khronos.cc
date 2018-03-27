@@ -1,4 +1,4 @@
-// ml:run = time -p $bin > output
+// ml:run = time -p $bin
 // ml:ccf += -fno-vectorize
 // ml:ldf += -lOpenCL
 #include <iostream>
@@ -31,7 +31,7 @@ int main()
         return 1;
     }
 
-    cl::Platform default_platform{all_platforms[0]};
+    cl::Platform default_platform{all_platforms[1]};
     // std::cout << "Using platform: "
     //     << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
 
@@ -54,6 +54,12 @@ int main()
         {
             auto id = get_global_id(0);
             c[id] = a[id] + b[id];
+        }
+
+        void kernel minus(global double const* a, global double const* b, global double* c)
+        {
+            auto id = get_global_id(0);
+            c[id] = a[id] - b[id];
         }
     )"};
 
@@ -82,7 +88,7 @@ int main()
     queue.enqueueWriteBuffer(buffer_b, CL_TRUE, 0, bsize, b.data());
 
     auto add = cl::make_kernel<cl::Buffer&, cl::Buffer&, cl::Buffer&>(program, "add");
-    cl::EnqueueArgs eargs{queue, cl::NullRange, cl::NDRange(size), cl::NullRange};
+    cl::EnqueueArgs eargs{queue, cl::NDRange(size)};
 
     utils::timer t;
     t.start();
