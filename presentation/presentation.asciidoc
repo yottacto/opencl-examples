@@ -4,6 +4,7 @@
 // :revealjs_theme: beige
 // :revealjs_theme: night
 :revealjs_theme: simple
+:customcss: style.css
 
 == OpenCL
 
