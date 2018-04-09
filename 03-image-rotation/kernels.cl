@@ -9,7 +9,6 @@ __kernel void image_rotate(
     float angle
 )
 {
-    printf("hello\n");
     int width  = get_image_width(src);
     int height = get_image_width(src);
     int const x = get_global_id(0);

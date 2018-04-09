@@ -1,5 +1,7 @@
+// ml:opt = 0
+// ml:ccf += -g
 // ml:run = time -p $bin
-// ml:ldf += -lOpenCL -I/usr/include/opencv -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_aruco -lopencv_bgsegm -lopencv_bioinspired -lopencv_ccalib -lopencv_dnn_objdetect -lopencv_dpm -lopencv_face -lopencv_photo -lopencv_freetype -lopencv_fuzzy -lopencv_hdf -lopencv_hfs -lopencv_img_hash -lopencv_line_descriptor -lopencv_optflow -lopencv_reg -lopencv_rgbd -lopencv_saliency -lopencv_stereo -lopencv_structured_light -lopencv_phase_unwrapping -lopencv_surface_matching -lopencv_tracking -lopencv_datasets -lopencv_text -lopencv_dnn -lopencv_plot -lopencv_xfeatures2d -lopencv_shape -lopencv_video -lopencv_ml -lopencv_ximgproc -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_flann -lopencv_xobjdetect -lopencv_imgcodecs -lopencv_objdetect -lopencv_xphoto -lopencv_imgproc -lopencv_core
+// ml:ldf += -g -lOpenCL -I/usr/include/opencv -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_aruco -lopencv_bgsegm -lopencv_bioinspired -lopencv_ccalib -lopencv_dnn_objdetect -lopencv_dpm -lopencv_face -lopencv_photo -lopencv_freetype -lopencv_fuzzy -lopencv_hdf -lopencv_hfs -lopencv_img_hash -lopencv_line_descriptor -lopencv_optflow -lopencv_reg -lopencv_rgbd -lopencv_saliency -lopencv_stereo -lopencv_structured_light -lopencv_phase_unwrapping -lopencv_surface_matching -lopencv_tracking -lopencv_datasets -lopencv_text -lopencv_dnn -lopencv_plot -lopencv_xfeatures2d -lopencv_shape -lopencv_video -lopencv_ml -lopencv_ximgproc -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_flann -lopencv_xobjdetect -lopencv_imgcodecs -lopencv_objdetect -lopencv_xphoto -lopencv_imgproc -lopencv_core
 #include <iostream>
 #include <iterator>
 #include <fstream>
@@ -13,9 +15,10 @@
 #include "timer.hh"
 
 using value_type = unsigned char;
-auto constexpr rep_times = 1;
+auto constexpr rep_times = 10;
 float const pi = std::acos(-1.);
 float const angle = pi / 3.;
+std::string filename{"6400.jpg"};
 auto size = 0u;
 auto bsize = 0u;
 
@@ -34,7 +37,7 @@ int main()
         return 1;
     }
 
-    cl::Platform default_platform{all_platforms[0]};
+    cl::Platform default_platform{all_platforms[1]};
     // std::cout << "Using platform: "
     //     << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
 
@@ -68,12 +71,14 @@ int main()
         return 1;
     }
 
-    cv::Mat in_img = cv::imread("test.jpg");
+    cv::Mat in_img = cv::imread(filename);
     // std::cerr << in_img.type() << "\n";
     // std::cerr << in_img.elemSize() << "\n";
     // std::cerr << in_img.elemSize1() << "\n";
-    // cv::Mat gray_img;
-    // cv::cvtColor(in_img, gray_img, cv::COLOR_RGB2GRAY);
+
+    cv::Mat gray_img;
+    cv::cvtColor(in_img, gray_img, cv::COLOR_RGB2GRAY);
+
     // std::cerr << gray_img.elemSize() << "\n";
     // std::cerr << gray_img.elemSize1() << "\n";
 
@@ -86,10 +91,13 @@ int main()
     // cv::imshow("Display window", gray_img);
     // cv::waitKey(0);
 
-    // cl::ImageFormat format{CL_LUMINANCE, CL_UNORM_INT8};
-    cl::ImageFormat format{CL_RGB, CL_UNORM_INT8};
-    // cl::Image2D input{context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, format, width, height, 0, gray_img.data};
-    cl::Image2D input{context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, format, width, height, 0, in_img.data};
+    auto& out_img = gray_img;
+
+    cl::ImageFormat format{CL_LUMINANCE, CL_UNORM_INT8};
+    // cl::ImageFormat format{CL_RGB, CL_UNORM_INT8};
+
+    cl::Image2D input{context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, format, width, height, 0, out_img.data};
+    // cl::Image2D input{context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, format, width, height, 0, in_img.data};
     cl::Image2D output{context, CL_MEM_READ_WRITE, format, width, height};
 
     cl::CommandQueue queue{context, default_device};
@@ -141,11 +149,11 @@ int main()
         region,
         0, // row pitch
         0, // slice pitch
-        in_img.data
+        out_img.data
     );
 
     // cv::namedWindow("Display window", cv::WINDOW_AUTOSIZE);
-    // cv::imshow("Display window", in_img);
+    // cv::imshow("Display window", out_img);
     // while (cv::waitKey(1000) != 27) {
     // }
 
