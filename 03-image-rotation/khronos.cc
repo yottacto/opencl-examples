@@ -17,19 +17,13 @@
 using value_type = unsigned char;
 auto constexpr rep_times = 10;
 float const pi = std::acos(-1.);
-float const angle = pi / 3.;
-std::string filename{"6400.jpg"};
+float const angle = pi;
+std::string filename{"image/800.jpg"};
 auto size = 0u;
 auto bsize = 0u;
 
 int main()
 {
-    // std::cout << "\n";
-
-    {
-        std::fstream fin{"config"};
-    }
-
     std::vector<cl::Platform> all_platforms;
     cl::Platform::get(&all_platforms);
     if (all_platforms.size() == 0) {
@@ -37,7 +31,7 @@ int main()
         return 1;
     }
 
-    cl::Platform default_platform{all_platforms[1]};
+    cl::Platform default_platform{all_platforms[0]};
     // std::cout << "Using platform: "
     //     << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
 
@@ -152,10 +146,10 @@ int main()
         out_img.data
     );
 
-    // cv::namedWindow("Display window", cv::WINDOW_AUTOSIZE);
-    // cv::imshow("Display window", out_img);
-    // while (cv::waitKey(1000) != 27) {
-    // }
+    cv::namedWindow("Display window", cv::WINDOW_AUTOSIZE);
+    cv::imshow("Display window", out_img);
+    while (cv::waitKey(1000) != 27 /* esc */) {
+    }
 
     std::cout << sum_time / rep_times << "\n";
 }
