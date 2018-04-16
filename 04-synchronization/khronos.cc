@@ -9,15 +9,39 @@
 #include "timer.hh"
 
 #define HARDWARE_INFO 0
+#define OUTPUT_RESULTS 0
+#define TRACE_STATUS 1
 
 using value_type = int;
-auto constexpr KB = 1024;
-auto constexpr MB = 1024*KB;
+// auto constexpr KB = 1024;
+// auto constexpr MB = 1024*KB;
 
 // auto constexpr bsize = 64*MB;
 // auto constexpr size  = bsize / sizeof(value_type);
-auto constexpr size  = 10;
+auto constexpr size  = 100000;
 auto constexpr bsize = size * sizeof(value_type);
+
+void test_event(cl::Event& e, std::string const& name = "")
+{
+#if TRACE_STATUS
+    std::string output{"status for event \e[33m" + name + " \e[0m:\n"};
+    for (auto i = 0; ; i++) {
+        cl_int status;
+        e.getInfo(CL_EVENT_COMMAND_EXECUTION_STATUS, &status);
+        std::string str;
+        switch (status) {
+            case CL_QUEUED:    str = "CL_QUEUED";    break;
+            case CL_SUBMITTED: str = "CL_SUBMITTED"; break;
+            case CL_RUNNING:   str = "CL_RUNNING";   break;
+            case CL_COMPLETE:  str = "CL_COMPLETE";  break;
+        }
+        output += "round [" + std::to_string(i) + "],\tstatus = \e[0;36m[" + str + "]\e[0m\n";
+        if (status == CL_COMPLETE)
+            break;
+    }
+    std::cout << output << "\n";
+#endif
+}
 
 int main()
 {
@@ -96,6 +120,9 @@ int main()
         nullptr,
         &event1[0]
     );
+
+    test_event(event1[0], "copy host data to buffer_a");
+
     // t1.stop();
     // std::cout << t1.elapsed_microseconds() << "us\n";
 
@@ -107,26 +134,34 @@ int main()
         0,
         bsize,
         a.data(),
-        &event1,
+        // &event1,
+        nullptr,
         &event2[0]
     );
+
+    test_event(event2[0], "copy host data to buffer_b");
 
     // t2.stop();
     // std::cout << t2.elapsed_microseconds() << "us\n";
 
-    event2[0].wait();
+    // event2[0].wait();
 
     auto add = cl::make_kernel<cl::Buffer&, cl::Buffer&, cl::Buffer&>(program, "add");
     cl::EnqueueArgs eargs1{queue, cl::NDRange(size)};
     event1[0] = add(eargs1, buffer_a, buffer_b, buffer_c);
 
+    test_event(event1[0], "excuting kernel [add]");
+
     auto mul_minus = cl::make_kernel<cl::Buffer&, cl::Buffer&, cl::Buffer&>(program, "mul_minus");
     cl::EnqueueArgs eargs2{queue, event1[0], cl::NDRange(size)};
     event2[0] = mul_minus(eargs2, buffer_a, buffer_b, buffer_c);
 
+    test_event(event2[0], "excuting kernel [mul_minus]");
+
     std::vector<value_type> c(size);
     queue.enqueueReadBuffer(buffer_c, CL_TRUE, 0, bsize, c.data(), &event2);
 
+#if OUTPUT_RESULTS
     std::cout << "buffer_a: ";
     for (auto i : a)
         std::cout << i << "\t";
@@ -141,6 +176,7 @@ int main()
     for (auto i : c)
         std::cout << i << "\t";
     std::cout << "\n";
+#endif
 
     for (auto i = 0u; i < size; i++)
         if (c[i] != (a[i] + a[i]) * a[i] - a[i]) {
