@@ -72,7 +72,7 @@ int main()
     std::fstream fin{"kernels.cl"};
     std::string kernel_code {
         std::istreambuf_iterator<char>{fin},
-            std::istreambuf_iterator<char>{}
+        std::istreambuf_iterator<char>{}
     };
 
     sources.emplace_back(kernel_code.c_str(), kernel_code.size());
