@@ -1,0 +1,9 @@
+#!/usr/bin/fish
+
+clang++ -xc++ -std=c++14 -O3 -lOpenCL -o $argv[1] $argv[1].cc
+
+for i in 256 512 1024 2048 4096
+    # echo -e "testing size $i"
+    eval ./$argv[1] $i
+end
+
