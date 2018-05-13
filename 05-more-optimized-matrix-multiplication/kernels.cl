@@ -3,10 +3,11 @@
 typedef float value_type;
 
 // First naive implementation
-__kernel void mul0(int M, int N, int K,
-                       const __global value_type* A,
-                       const __global value_type* B,
-                       __global value_type* C)
+__kernel void mul0(
+    int M, int N, int K,
+    const __global value_type* A,
+    const __global value_type* B,
+    __global value_type* C)
 {
     // Thread identifiers
     int global_row = get_global_id(0); // row ID of C (0..M)
@@ -27,10 +28,11 @@ __kernel void mul0(int M, int N, int K,
 
 
 // Tiled and coalesced version
-__kernel void mul1(int M, int N, int K,
-                      const __global value_type* A,
-                      const __global value_type* B,
-                      __global value_type* C)
+__kernel void mul1(
+    int M, int N, int K,
+    const __global value_type* A,
+    const __global value_type* B,
+    __global value_type* C)
 {
     // Thread identifiers
     const int row = get_local_id(0); // Local row ID (max: TS)
@@ -71,10 +73,11 @@ __kernel void mul1(int M, int N, int K,
 }
 
 
-__kernel void mul2(int M, int N, int K,
-                      const __global value_type* a,
-                      const __global float4* b,
-                      __global float4* c)
+__kernel void mul2(
+    int M, int N, int K,
+    const __global value_type* a,
+    const __global float4* b,
+    __global float4* c)
 {
     int bx = get_group_id(0);
     int by = get_group_id(1);
@@ -116,5 +119,71 @@ __kernel void mul2(int M, int N, int K,
 
     for (int i = 0; i < 4; i++)
         c[N_float4 * (TS * (i + 4*by) + ty) + bx*TS + tx] = v[i];
+}
+
+
+#define unroll_m 4
+#define unroll_n 4
+#define unroll_m_float4 (unroll_m/4)
+#define unroll_n_float4 (unroll_n/4)
+
+__kernel void mul3(
+    int M, int N, int K,
+    const __global value_type* a,
+    const __global float4* b,
+    __global float4* c)
+{
+    int bx = get_group_id(0);
+    int by = get_group_id(1);
+    int tx = get_local_id(0);
+    int ty = get_local_id(1);
+
+    local float4 ta[TS * unroll_m_float4][TS];
+    local float4 tb[TS * unroll_n_float4][TS];
+
+    int ab = unroll_m * K * TS * by;
+    int ae = ab + K;
+
+    int bb = TS*bx * unroll_n_float4;
+
+    float4 v[unroll_m][unroll_n_float4];
+    for (int i = 0; i < unroll_m; i++)
+        for (int j = 0; j < unroll_n_float4; j++)
+            v[i][j] = 0.0f;
+
+    int const N_float4 = N/4;
+    for (int i = ab, j = bb; i < ae; i += TS, j += TS * N_float4) {
+        for (int j = 0; j < unroll_m_float4; j++) {
+            float4 tmp;
+            tmp.x = a[(4 * j + 0) * TS * K + i + ty * K * tx];
+            tmp.y = a[(4 * j + 1) * TS * K + i + ty * K * tx];
+            tmp.z = a[(4 * j + 2) * TS * K + i + ty * K * tx];
+            tmp.w = a[(4 * j + 3) * TS * K + i + ty * K * tx];
+            ta[j * TS + ty][tx] = tmp;
+        }
+
+        for (int j = 0; j < unroll_n_float4; j++)
+            tb[j * TS + ty][tx] = b[j * ty * N_float4 + j * TS + tx];
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        for (int k = 0; k < TS; k++) {
+            for (int i = 0; i < unroll_m_float4; i++)
+                for (int j = 0; j < unroll_m_float4; j++) {
+                    float4 tmp_a = ta[i * TS + ty][k];
+                    float4 tmp_b = tb[j * TS + k][tx];
+                    v[4 * i + 0][j] += tmp_a.x * tmp_b;
+                    v[4 * i + 1][j] += tmp_a.x * tmp_b;
+                    v[4 * i + 2][j] += tmp_a.x * tmp_b;
+                    v[4 * i + 3][j] += tmp_a.x * tmp_b;
+                }
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    for (int i = 0; i < unroll_m; i++)
+        for (int j = 0; j < unroll_n_float4; j++)
+            c[N_float4 * (TS * (i + unroll_m * by) + ty)
+                       + (bx * unroll_n_float4 + j) *TS + tx] = v[i][j];
 }
 
