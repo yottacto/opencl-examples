@@ -45,6 +45,7 @@ void generate_real(Vec& a)
 int main(int argc, char** argv)
 {
     size = std::stoi(std::string{argv[1]});
+    // size = 32;
     bsize = size * size * sizeof(value_type);
 
     std::vector<cl::Platform> all_platforms;
@@ -99,8 +100,11 @@ int main(int argc, char** argv)
     generate_real(a);
     generate_real(b);
 
+    // for (auto i = 0; i < size; i++)
+    //     a[i * size + i] = b[i * size + i] = 1;
 
     print_matrix(a, size);
+    print_matrix(b, size);
 
     // std::iota(std::begin(a), std::end(a), 0);
 

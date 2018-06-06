@@ -1,4 +1,4 @@
-// ml:run = time -p $bin 256
+// ml:run = time -p $bin 32
 // ml:ldf += -lOpenCL
 #include <iostream>
 #include <iterator>
@@ -98,6 +98,9 @@ int main(int argc, char** argv)
     // generate numbers
     generate_real(a);
     generate_real(b);
+
+    // for (auto i = 0; i < size; i++)
+    //     a[i * size + i] = b[i * size + i] = 1;
 
 
     print_matrix(a, size);

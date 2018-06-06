@@ -75,7 +75,7 @@ __kernel void mul1(
 
 __kernel void mul2(
     int M, int N, int K,
-    const __global value_type* a,
+    const __global float* a,
     const __global float4* b,
     __global float4* c)
 {
@@ -83,6 +83,8 @@ __kernel void mul2(
     int by = get_group_id(1);
     int tx = get_local_id(0);
     int ty = get_local_id(1);
+
+    // printf("bx=%d, by=%d, tx=%d, ty=%d\n", bx, by, tx, ty);
 
     local float4 ta[TS][TS];
     local float4 tb[TS][TS];
@@ -99,12 +101,12 @@ __kernel void mul2(
     int const N_float4 = N/4;
     for (int i = ab, j = bb; i < ae; i += TS, j += TS * N_float4) {
         float4 tmp;
-        tmp.x = a[0 * TS * K + i + ty * K * tx];
-        tmp.y = a[1 * TS * K + i + ty * K * tx];
-        tmp.z = a[2 * TS * K + i + ty * K * tx];
-        tmp.w = a[3 * TS * K + i + ty * K * tx];
+        tmp.x = a[0 * TS * K + i + ty * K + tx];
+        tmp.y = a[1 * TS * K + i + ty * K + tx];
+        tmp.z = a[2 * TS * K + i + ty * K + tx];
+        tmp.w = a[3 * TS * K + i + ty * K + tx];
         ta[ty][tx] = tmp;
-        tb[ty][tx] = b[j * ty * N_float4 + tx];
+        tb[ty][tx] = b[j + ty * N_float4 + tx];
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -155,15 +157,15 @@ __kernel void mul3(
     for (int i = ab, j = bb; i < ae; i += TS, j += TS * N_float4) {
         for (int j = 0; j < unroll_m_float4; j++) {
             float4 tmp;
-            tmp.x = a[(4 * j + 0) * TS * K + i + ty * K * tx];
-            tmp.y = a[(4 * j + 1) * TS * K + i + ty * K * tx];
-            tmp.z = a[(4 * j + 2) * TS * K + i + ty * K * tx];
-            tmp.w = a[(4 * j + 3) * TS * K + i + ty * K * tx];
+            tmp.x = a[(4 * j + 0) * TS * K + i + ty * K + tx];
+            tmp.y = a[(4 * j + 1) * TS * K + i + ty * K + tx];
+            tmp.z = a[(4 * j + 2) * TS * K + i + ty * K + tx];
+            tmp.w = a[(4 * j + 3) * TS * K + i + ty * K + tx];
             ta[j * TS + ty][tx] = tmp;
         }
 
         for (int j = 0; j < unroll_n_float4; j++)
-            tb[j * TS + ty][tx] = b[j * ty * N_float4 + j * TS + tx];
+            tb[j * TS + ty][tx] = b[j + ty * N_float4 + j * TS + tx];
 
         barrier(CLK_LOCAL_MEM_FENCE);
 

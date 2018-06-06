@@ -1,3 +1,3 @@
 #define TS 32
-#define REP_TIMES 10
+#define REP_TIMES 1
 

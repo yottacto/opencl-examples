@@ -1,4 +1,5 @@
-// ml:run = time -p $bin 256
+// ml:run = time -p $bin
+// ml:ccf += -fno-vectorize
 // ml:ldf += -lOpenCL
 #include <iostream>
 #include <iterator>
@@ -8,14 +9,13 @@
 #include <random>
 #include <CL/cl.hpp>
 #include "timer.hh"
-#include "constant.hh"
 
 using value_type = float;
-auto constexpr ts = TS;
-auto constexpr rep_times = REP_TIMES;
+auto constexpr ts = 32;
+auto constexpr rep_times = 5;
 auto size = 0u;
 auto bsize = 0u;
-std::string program_name{"mul1"};
+std::string program_name;
 
 #define PRINT_MATRIX 1
 
@@ -42,11 +42,13 @@ void generate_real(Vec& a)
         i = dist(rd);
 }
 
-int main(int argc, char** argv)
+int main()
 {
-    // size = std::stoi(std::string{argv[1]});
-    size = 16;
-    bsize = size * size * sizeof(value_type);
+    {
+        std::fstream fin{"config"};
+        fin >> size >> program_name;
+        bsize = size * size * sizeof(value_type);
+    }
 
     std::vector<cl::Platform> all_platforms;
     cl::Platform::get(&all_platforms);
@@ -97,11 +99,9 @@ int main(int argc, char** argv)
     std::vector<value_type> b(size * size);
 
     // generate numbers
-    // generate_real(a);
-    // generate_real(b);
+    generate_real(a);
+    generate_real(b);
 
-    for (auto i = 0; i < size; i++)
-        a[i * size + i] = b[i * size + i] = 1;
 
     print_matrix(a, size);
 
@@ -110,7 +110,6 @@ int main(int argc, char** argv)
     cl::CommandQueue queue{context, default_device};
 
     queue.enqueueWriteBuffer(buffer_a, CL_TRUE, 0, bsize, a.data());
-    queue.enqueueWriteBuffer(buffer_b, CL_TRUE, 0, bsize, b.data());
 
     auto mul = cl::make_kernel<
         int,
@@ -119,16 +118,17 @@ int main(int argc, char** argv)
         cl::Buffer&,
         cl::Buffer&,
         cl::Buffer&
-    >(program, program_name);
+            >(program, program_name);
 
-    cl::EnqueueArgs eargs{queue, cl::NDRange(size, size), cl::NDRange(ts, ts)};
+    // cl::EnqueueArgs eargs{queue, cl::NDRange(size, size), cl::NDRange(ts, ts)};
+    cl::EnqueueArgs eargs{queue, cl::NDRange(size, size)};
 
     auto sum_time = 0.;
     for (auto rep = 0; rep < rep_times; rep++) {
         utils::timer t;
         t.start();
 
-        mul(eargs, size, size, size, buffer_a, buffer_b, buffer_c).wait();
+        mul(eargs, size, size, size, buffer_a, buffer_a, buffer_c).wait();
 
         t.stop();
 
@@ -142,5 +142,11 @@ int main(int argc, char** argv)
     print_matrix(c, size);
 
     std::cout << sum_time / rep_times << "\n";
+
+
+    // std::cout << "  result: \n";
+    // for (auto i : c)
+    //     std::cout << i << " ";
+    // std::cout << "\n";
 }
 
